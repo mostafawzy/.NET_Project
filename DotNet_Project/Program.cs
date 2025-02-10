@@ -3,33 +3,58 @@ using System.Data.SqlClient;
 
 class Program
 {
-    static string connStr = "Server=DESKTOP-VSR40M5\\SQLEXPRESS01;Database=CompanyDB_ADO;Integrated Security=True;";
-
+     static string connStr = "Server=DESKTOP-VSR40M5\\SQLEXPRESS01;Database=CompanyDB_ADO;Integrated Security=True;";
+    //static string connStr = "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=CompanyDB_ADO;Integrated Security=True;Trust Server Certificate=False;";
     static void Main()
     {
+        string[] menuOptions = { "Add Employee/Department", "Display Options", "Edit Employee/Department", "Delete Employee/Department", "Exit" };
+        int highlight = 0;
         bool running = true;
+
         while (running)
         {
             Console.Clear();
-            Console.WriteLine("========== Company Management System ==========");
-            Console.WriteLine("1. Add Employee/Department");
-            Console.WriteLine("2. Display Options");
-            Console.WriteLine("3. Edit Employee/Department");
-            Console.WriteLine("4. Delete Employee/Department");
-            Console.WriteLine("5. Exit");
-            Console.Write("Choose an option: ");
+            Console.WriteLine(" Company Management System ");
 
-            switch (Console.ReadLine())
+            for (int i = 0; i < menuOptions.Length; i++)
             {
-                case "1": AddMenu(); break;
-                case "2": DisplayMenu(); break;
-                case "3": EditMenu(); break;
-                case "4": DeleteMenu(); break;
-                case "5": running = false; break;
-                default: Console.WriteLine("Invalid choice!"); break;
+                Console.SetCursorPosition(50, 20 / (menuOptions.Length + 1) * (i + 1));
+                if (i == highlight)
+                {
+                    Console.BackgroundColor = ConsoleColor.DarkMagenta;
+                    Console.ForegroundColor = ConsoleColor.White;
+                }
+                Console.WriteLine(menuOptions[i]);
+                Console.ResetColor();
             }
-            Console.WriteLine("\nPress any key to continue...");
-            Console.ReadKey();
+
+            ConsoleKeyInfo key = Console.ReadKey();
+
+            switch (key.Key)
+            {
+                case ConsoleKey.UpArrow:
+                    highlight = (highlight == 0) ? menuOptions.Length - 1 : highlight - 1;
+                    break;
+                case ConsoleKey.DownArrow:
+                    highlight = (highlight == menuOptions.Length - 1) ? 0 : highlight + 1;
+                    break;
+                case ConsoleKey.Enter:
+                    Console.Clear();
+                    switch (highlight)
+                    {
+                        case 0: AddMenu(); break;
+                        case 1: DisplayMenu(); break;
+                        case 2: EditMenu(); break;
+                        case 3: DeleteMenu(); break;
+                        case 4: running = false; break;
+                    }
+                    Console.WriteLine("\nPress any key to return to the menu...");
+                    Console.ReadKey();
+                    break;
+                case ConsoleKey.Escape:
+                    running = false;
+                    break;
+            }
         }
     }
 
@@ -138,7 +163,7 @@ class Program
                 cmd.Parameters.AddWithValue("@deptID", deptID);
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
-                    Console.WriteLine($"\n========== Employees in {deptName} ==========");
+                    Console.WriteLine($"\n............ Employees in {deptName} ............");
                     while (reader.Read())
                     {
                         Console.WriteLine(reader["EmployeeName"]);
@@ -176,7 +201,7 @@ class Program
             using (SqlCommand cmd = new SqlCommand(query, conn))
             using (SqlDataReader reader = cmd.ExecuteReader())
             {
-                Console.WriteLine("\n========== Employees ==========");
+                Console.WriteLine("\n............ Employees ............");
                 while (reader.Read())
                 {
                     string department = reader["DepartmentName"] != DBNull.Value ? reader["DepartmentName"].ToString() : "No Department";
@@ -195,7 +220,7 @@ class Program
             using (SqlCommand cmd = new SqlCommand(query, conn))
             using (SqlDataReader reader = cmd.ExecuteReader())
             {
-                Console.WriteLine("\n========== Departments ==========");
+                Console.WriteLine("\n............ Departments ............");
                 while (reader.Read())
                 {
                     Console.WriteLine($"ID: {reader["DepartmentID"]}, Name: {reader["DepartmentName"]}");
@@ -204,6 +229,37 @@ class Program
         }
     }
 
+    static void DeleteEmployee()
+    {
+        Console.Write("Enter Employee ID or Name to delete: ");
+        string input = Console.ReadLine();
+
+        int? id = int.TryParse(input, out int parsedId) ? parsedId : GetEmployeeIdByName(input);
+
+        if (id == null)
+        {
+            Console.WriteLine("Employee not found.");
+            return;
+        }
+
+        ExecuteQuery("DELETE FROM Employees WHERE EmployeeID = @id", cmd => cmd.Parameters.AddWithValue("@id", id));
+        Console.WriteLine("Employee deleted.");
+    }
+
+    static int? GetEmployeeIdByName(string name)
+    {
+        string query = "SELECT EmployeeID FROM Employees WHERE EmployeeName = @name";
+        using (SqlConnection conn = new SqlConnection(connStr))
+        {
+            conn.Open();
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@name", name);
+                object result = cmd.ExecuteScalar();
+                return result != null ? (int?)result : null;
+            }
+        }
+    }
 
     static void EditEmployee()
     {
@@ -218,12 +274,23 @@ class Program
             return;
         }
 
-        Console.Write("Enter New Name: ");
+        Console.Write("Enter New Employee Name: ");
         string newName = Console.ReadLine();
 
-        string query = "UPDATE Employees SET EmployeeName = @name WHERE EmployeeID = @id";
+        Console.Write("Enter New Department Name: ");
+        string newDept = Console.ReadLine();
+
+        int? deptID = GetDepartmentIdByName(newDept);
+        if (deptID == null)
+        {
+            Console.WriteLine("Department not found. Please add the department first.");
+            return;
+        }
+
+        string query = "UPDATE Employees SET EmployeeName = @newName, DepartmentID = @deptID WHERE EmployeeID = @id";
         ExecuteQuery(query, cmd => {
-            cmd.Parameters.AddWithValue("@name", newName);
+            cmd.Parameters.AddWithValue("@newName", newName);
+            cmd.Parameters.AddWithValue("@deptID", deptID);
             cmd.Parameters.AddWithValue("@id", id);
         });
 
@@ -244,34 +311,16 @@ class Program
         }
 
         Console.Write("Enter New Department Name: ");
-        string newName = Console.ReadLine();
+        string newDeptName = Console.ReadLine();
 
-        string query = "UPDATE Departments SET DepartmentName = @name WHERE DepartmentID = @id";
+        string query = "UPDATE Departments SET DepartmentName = @newDeptName WHERE DepartmentID = @id";
         ExecuteQuery(query, cmd => {
-            cmd.Parameters.AddWithValue("@name", newName);
+            cmd.Parameters.AddWithValue("@newDeptName", newDeptName);
             cmd.Parameters.AddWithValue("@id", id);
         });
 
         Console.WriteLine("Department updated successfully.");
     }
-
-    static void DeleteEmployee()
-    {
-        Console.Write("Enter Employee ID or Name to delete: ");
-        string input = Console.ReadLine();
-
-        int? id = int.TryParse(input, out int parsedId) ? parsedId : GetEmployeeIdByName(input);
-
-        if (id == null)
-        {
-            Console.WriteLine("Employee not found.");
-            return;
-        }
-
-        ExecuteQuery("DELETE FROM Employees WHERE EmployeeID = @id", cmd => cmd.Parameters.AddWithValue("@id", id));
-        Console.WriteLine("Employee deleted.");
-    }
-
     static void DeleteDepartment()
     {
         Console.Write("Enter Department ID or Name to delete: ");
@@ -285,23 +334,25 @@ class Program
             return;
         }
 
-        ExecuteQuery("DELETE FROM Departments WHERE DepartmentID = @id", cmd => cmd.Parameters.AddWithValue("@id", id));
-        Console.WriteLine("Department deleted.");
-    }
-
-    static int? GetEmployeeIdByName(string name)
-    {
-        string query = "SELECT EmployeeID FROM Employees WHERE EmployeeName = @name";
+        
+        string checkQuery = "SELECT COUNT(*) FROM Employees WHERE DepartmentID = @id";
         using (SqlConnection conn = new SqlConnection(connStr))
         {
             conn.Open();
-            using (SqlCommand cmd = new SqlCommand(query, conn))
+            using (SqlCommand cmd = new SqlCommand(checkQuery, conn))
             {
-                cmd.Parameters.AddWithValue("@name", name);
-                object result = cmd.ExecuteScalar();
-                return result != null ? (int?)result : null;
+                cmd.Parameters.AddWithValue("@id", id);
+                int count = (int)cmd.ExecuteScalar();
+                if (count > 0)
+                {
+                    Console.WriteLine("Cannot delete department. Employees are assigned to this department.");
+                    return;
+                }
             }
         }
+
+        ExecuteQuery("DELETE FROM Departments WHERE DepartmentID = @id", cmd => cmd.Parameters.AddWithValue("@id", id));
+        Console.WriteLine("Department deleted.");
     }
 
 }
