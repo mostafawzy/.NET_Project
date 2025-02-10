@@ -1,12 +1,9 @@
 ﻿using System;
-//using System.Data.SqlClient;
-using Microsoft.Data.SqlClient;
-
+using System.Data.SqlClient;
 
 class Program
 {
-    static string connStr =
-"Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=CompanyDB_ADO;Integrated Security=True;Trust Server Certificate=False;";
+    static string connStr = "Server=DESKTOP-VSR40M5\\SQLEXPRESS01;Database=CompanyDB_ADO;Integrated Security=True;";
 
     static void Main()
     {
@@ -14,32 +11,63 @@ class Program
         while (running)
         {
             Console.Clear();
-            Console.WriteLine("========== Employee Management System ==========");
-            Console.WriteLine("1. Add Employee");
-            Console.WriteLine("2. Add Department");
-            Console.WriteLine("3. Display Employees");
-            Console.WriteLine("4. Display Departments");
-            Console.WriteLine("5. Search Employee");
-            Console.WriteLine("6. Edit Employee");
-            Console.WriteLine("7. Delete Employee");
-            Console.WriteLine("8. Exit");
+            Console.WriteLine("========== Company Management System ==========");
+            Console.WriteLine("1. Add Employee/Department");
+            Console.WriteLine("2. Display Options");
+            Console.WriteLine("3. Edit Employee/Department");
+            Console.WriteLine("4. Delete Employee/Department");
+            Console.WriteLine("5. Exit");
             Console.Write("Choose an option: ");
 
             switch (Console.ReadLine())
             {
-                case "1": AddEmployee(); break;
-                case "2": AddDepartment(); break;
-                case "3": DisplayEmployees(); break;
-                case "4": DisplayDepartments(); break;
-                case "5": SearchEmployee(); break;
-                case "6": EditEmployee(); break;
-                case "7": DeleteEmployee(); break;
-                case "8": running = false; break;
+                case "1": AddMenu(); break;
+                case "2": DisplayMenu(); break;
+                case "3": EditMenu(); break;
+                case "4": DeleteMenu(); break;
+                case "5": running = false; break;
                 default: Console.WriteLine("Invalid choice!"); break;
             }
             Console.WriteLine("\nPress any key to continue...");
             Console.ReadKey();
         }
+    }
+
+    static void AddMenu()
+    {
+        Console.WriteLine("1. Add Employee\n2. Add Department");
+        Console.Write("Choose: ");
+        if (Console.ReadLine() == "1") AddEmployee();
+        else AddDepartment();
+    }
+
+    static void DisplayMenu()
+    {
+        Console.WriteLine("1. All Employees\n2. All Departments\n3. Department with Employees");
+        Console.Write("Choose: ");
+        switch (Console.ReadLine())
+        {
+            case "1": DisplayEmployees(); break;
+            case "2": DisplayDepartments(); break;
+            case "3": DisplayDepartmentWithEmployees(); break;
+            default: Console.WriteLine("Invalid choice!"); break;
+        }
+    }
+
+    static void EditMenu()
+    {
+        Console.WriteLine("1. Edit Employee\n2. Edit Department");
+        Console.Write("Choose: ");
+        if (Console.ReadLine() == "1") EditEmployee();
+        else EditDepartment();
+    }
+
+    static void DeleteMenu()
+    {
+        Console.WriteLine("1. Delete Employee\n2. Delete Department");
+        Console.Write("Choose: ");
+        if (Console.ReadLine() == "1") DeleteEmployee();
+        else DeleteDepartment();
     }
 
     static void ExecuteQuery(string query, Action<SqlCommand> parameterSetter = null)
@@ -70,48 +98,30 @@ class Program
     {
         Console.Write("Enter Employee Name: ");
         string name = Console.ReadLine();
-
-        Console.Write("Enter Salary: ");
-        decimal salary = decimal.Parse(Console.ReadLine());
-
-        Console.Write("Enter Age: ");
-        int age = int.Parse(Console.ReadLine());
-
-        Console.Write("Enter Gender (Male/Female): ");
-        string gender = Console.ReadLine();
-
         Console.Write("Enter Department ID: ");
         int deptID = int.Parse(Console.ReadLine());
 
-        string query = "INSERT INTO Employees (EmployeeName, Salary, Age, Gender, DepartmentID) VALUES (@name, @salary, @age, @gender, @deptID)";
-        ExecuteQuery(query, cmd =>
-        {
+        string query = "INSERT INTO Employees (EmployeeName, DepartmentID) VALUES (@name, @deptID)";
+        ExecuteQuery(query, cmd => {
             cmd.Parameters.AddWithValue("@name", name);
-            cmd.Parameters.AddWithValue("@salary", salary);
-            cmd.Parameters.AddWithValue("@age", age);
-            cmd.Parameters.AddWithValue("@gender", gender);
             cmd.Parameters.AddWithValue("@deptID", deptID);
         });
-
         Console.WriteLine("Employee added successfully.");
     }
 
     static void DisplayEmployees()
     {
-        string query = "SELECT EmployeeID, EmployeeName, Salary, Age, Gender, DepartmentName " +
-                       "FROM Employees INNER JOIN Departments ON Employees.DepartmentID = Departments.DepartmentID";
-
+        string query = "SELECT EmployeeID, EmployeeName FROM Employees";
         using (SqlConnection conn = new SqlConnection(connStr))
         {
             conn.Open();
             using (SqlCommand cmd = new SqlCommand(query, conn))
             using (SqlDataReader reader = cmd.ExecuteReader())
             {
-                Console.WriteLine("\n========== Employee List ==========");
+                Console.WriteLine("\n========== Employees ==========");
                 while (reader.Read())
                 {
-                    Console.WriteLine($"ID: {reader["EmployeeID"]}, Name: {reader["EmployeeName"]}, Salary: {reader["Salary"]}, " +
-                                      $"Age: {reader["Age"]}, Gender: {reader["Gender"]}, Department: {reader["DepartmentName"]}");
+                    Console.WriteLine($"ID: {reader["EmployeeID"]}, Name: {reader["EmployeeName"]}");
                 }
             }
         }
@@ -119,58 +129,39 @@ class Program
 
     static void DisplayDepartments()
     {
-        string query = "SELECT d.DepartmentName, e.EmployeeName " +
-                       "FROM Departments d LEFT JOIN Employees e ON d.DepartmentID = e.DepartmentID";
-
+        string query = "SELECT * FROM Departments";
         using (SqlConnection conn = new SqlConnection(connStr))
         {
             conn.Open();
             using (SqlCommand cmd = new SqlCommand(query, conn))
             using (SqlDataReader reader = cmd.ExecuteReader())
             {
-                Console.WriteLine("\n========== Department List ==========");
-                string lastDept = "";
+                Console.WriteLine("\n========== Departments ==========");
                 while (reader.Read())
                 {
-                    string dept = reader["DepartmentName"].ToString();
-                    if (dept != lastDept)
-                    {
-                        Console.WriteLine($"Department: {dept}");
-                        lastDept = dept;
-                    }
-
-                    if (reader["EmployeeName"] != DBNull.Value)
-                    {
-                        Console.WriteLine($"   - {reader["EmployeeName"]}");
-                    }
+                    Console.WriteLine($"ID: {reader["DepartmentID"]}, Name: {reader["DepartmentName"]}");
                 }
             }
         }
     }
 
-    static void SearchEmployee()
+    static void DisplayDepartmentWithEmployees()
     {
-        Console.Write("Enter Employee Name or ID: ");
-        string input = Console.ReadLine();
-
-        string query = "SELECT * FROM Employees WHERE EmployeeID = @input OR EmployeeName = @input";
-
+        Console.Write("Enter Department ID: ");
+        int deptID = int.Parse(Console.ReadLine());
+        string query = "SELECT EmployeeName FROM Employees WHERE DepartmentID = @deptID";
         using (SqlConnection conn = new SqlConnection(connStr))
         {
             conn.Open();
             using (SqlCommand cmd = new SqlCommand(query, conn))
             {
-                cmd.Parameters.AddWithValue("@input", input);
+                cmd.Parameters.AddWithValue("@deptID", deptID);
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
-                    if (reader.Read())
+                    Console.WriteLine("\n========== Employees in Department ==========");
+                    while (reader.Read())
                     {
-                        Console.WriteLine($"ID: {reader["EmployeeID"]}, Name: {reader["EmployeeName"]}, Salary: {reader["Salary"]}, " +
-                                          $"Age: {reader["Age"]}, Gender: {reader["Gender"]}");
-                    }
-                    else
-                    {
-                        Console.WriteLine("Employee not found.");
+                        Console.WriteLine(reader["EmployeeName"]);
                     }
                 }
             }
@@ -181,44 +172,45 @@ class Program
     {
         Console.Write("Enter Employee ID to edit: ");
         int id = int.Parse(Console.ReadLine());
-
         Console.Write("Enter New Name: ");
         string name = Console.ReadLine();
 
-        Console.Write("Enter New Salary: ");
-        decimal salary = decimal.Parse(Console.ReadLine());
-
-        Console.Write("Enter New Age: ");
-        int age = int.Parse(Console.ReadLine());
-
-        Console.Write("Enter New Gender (Male/Female): ");
-        string gender = Console.ReadLine();
-
-        Console.Write("Enter New Department ID: ");
-        int deptID = int.Parse(Console.ReadLine());
-
-        string query = "UPDATE Employees SET EmployeeName = @name, Salary = @salary, Age = @age, Gender = @gender, DepartmentID = @deptID WHERE EmployeeID = @id";
-        ExecuteQuery(query, cmd =>
-        {
+        string query = "UPDATE Employees SET EmployeeName = @name WHERE EmployeeID = @id";
+        ExecuteQuery(query, cmd => {
             cmd.Parameters.AddWithValue("@name", name);
-            cmd.Parameters.AddWithValue("@salary", salary);
-            cmd.Parameters.AddWithValue("@age", age);
-            cmd.Parameters.AddWithValue("@gender", gender);
-            cmd.Parameters.AddWithValue("@deptID", deptID);
             cmd.Parameters.AddWithValue("@id", id);
         });
-
         Console.WriteLine("Employee updated successfully.");
+    }
+
+    static void EditDepartment()
+    {
+        Console.Write("Enter Department ID to edit: ");
+        int id = int.Parse(Console.ReadLine());
+        Console.Write("Enter New Department Name: ");
+        string name = Console.ReadLine();
+
+        string query = "UPDATE Departments SET DepartmentName = @name WHERE DepartmentID = @id";
+        ExecuteQuery(query, cmd => {
+            cmd.Parameters.AddWithValue("@name", name);
+            cmd.Parameters.AddWithValue("@id", id);
+        });
+        Console.WriteLine("Department updated successfully.");
     }
 
     static void DeleteEmployee()
     {
         Console.Write("Enter Employee ID to delete: ");
         int id = int.Parse(Console.ReadLine());
+        ExecuteQuery("DELETE FROM Employees WHERE EmployeeID = @id", cmd => cmd.Parameters.AddWithValue("@id", id));
+        Console.WriteLine("Employee deleted.");
+    }
 
-        string query = "DELETE FROM Employees WHERE EmployeeID = @id";
-        ExecuteQuery(query, cmd => cmd.Parameters.AddWithValue("@id", id));
-
-        Console.WriteLine("Employee deleted successfully.");
+    static void DeleteDepartment()
+    {
+        Console.Write("Enter Department ID to delete: ");
+        int id = int.Parse(Console.ReadLine());
+        ExecuteQuery("DELETE FROM Departments WHERE DepartmentID = @id", cmd => cmd.Parameters.AddWithValue("@id", id));
+        Console.WriteLine("Department deleted.");
     }
 }

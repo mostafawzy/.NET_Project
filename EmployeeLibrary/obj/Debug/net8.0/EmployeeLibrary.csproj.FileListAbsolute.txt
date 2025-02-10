@@ -11,3 +11,16 @@ C:\Users\Hoda\source\repos\mostafawzy\.NET_Project\EmployeeLibrary\obj\Debug\net
 C:\Users\Hoda\source\repos\mostafawzy\.NET_Project\EmployeeLibrary\obj\Debug\net8.0\EmployeeLibrary.pdb
 C:\Users\Hoda\source\repos\mostafawzy\.NET_Project\EmployeeLibrary\obj\Debug\net8.0\ref\EmployeeLibrary.dll
 C:\Users\Hoda\source\repos\mostafawzy\.NET_Project\EmployeeLibrary\obj\Debug\net8.0\EmployeeLibrary.csproj.AssemblyReference.cache
+C:\Users\Mostafa Mohamed\source\repos\mostafawzy\.NET_Project\EmployeeLibrary\bin\Debug\net8.0\EmployeeLibrary.deps.json
+C:\Users\Mostafa Mohamed\source\repos\mostafawzy\.NET_Project\EmployeeLibrary\bin\Debug\net8.0\EmployeeLibrary.dll
+C:\Users\Mostafa Mohamed\source\repos\mostafawzy\.NET_Project\EmployeeLibrary\bin\Debug\net8.0\EmployeeLibrary.pdb
+C:\Users\Mostafa Mohamed\source\repos\mostafawzy\.NET_Project\EmployeeLibrary\obj\Debug\net8.0\EmployeeLibrary.csproj.AssemblyReference.cache
+C:\Users\Mostafa Mohamed\source\repos\mostafawzy\.NET_Project\EmployeeLibrary\obj\Debug\net8.0\EmployeeLibrary.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Mostafa Mohamed\source\repos\mostafawzy\.NET_Project\EmployeeLibrary\obj\Debug\net8.0\EmployeeLibrary.AssemblyInfoInputs.cache
+C:\Users\Mostafa Mohamed\source\repos\mostafawzy\.NET_Project\EmployeeLibrary\obj\Debug\net8.0\EmployeeLibrary.AssemblyInfo.cs
+C:\Users\Mostafa Mohamed\source\repos\mostafawzy\.NET_Project\EmployeeLibrary\obj\Debug\net8.0\EmployeeLibrary.csproj.CoreCompileInputs.cache
+C:\Users\Mostafa Mohamed\source\repos\mostafawzy\.NET_Project\EmployeeLibrary\obj\Debug\net8.0\EmployeeLibrary.sourcelink.json
+C:\Users\Mostafa Mohamed\source\repos\mostafawzy\.NET_Project\EmployeeLibrary\obj\Debug\net8.0\EmployeeLibrary.dll
+C:\Users\Mostafa Mohamed\source\repos\mostafawzy\.NET_Project\EmployeeLibrary\obj\Debug\net8.0\refint\EmployeeLibrary.dll
+C:\Users\Mostafa Mohamed\source\repos\mostafawzy\.NET_Project\EmployeeLibrary\obj\Debug\net8.0\EmployeeLibrary.pdb
+C:\Users\Mostafa Mohamed\source\repos\mostafawzy\.NET_Project\EmployeeLibrary\obj\Debug\net8.0\ref\EmployeeLibrary.dll
