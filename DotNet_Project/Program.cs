@@ -98,8 +98,16 @@ class Program
     {
         Console.Write("Enter Employee Name: ");
         string name = Console.ReadLine();
-        Console.Write("Enter Department ID: ");
-        int deptID = int.Parse(Console.ReadLine());
+
+        Console.Write("Enter Department Name: ");
+        string deptName = Console.ReadLine();
+
+        int? deptID = GetDepartmentIdByName(deptName);
+        if (deptID == null)
+        {
+            Console.WriteLine("Department not found. Please add the department first.");
+            return;
+        }
 
         string query = "INSERT INTO Employees (EmployeeName, DepartmentID) VALUES (@name, @deptID)";
         ExecuteQuery(query, cmd => {
@@ -109,9 +117,59 @@ class Program
         Console.WriteLine("Employee added successfully.");
     }
 
+    static void DisplayDepartmentWithEmployees()
+    {
+        Console.Write("Enter Department Name: ");
+        string deptName = Console.ReadLine();
+
+        int? deptID = GetDepartmentIdByName(deptName);
+        if (deptID == null)
+        {
+            Console.WriteLine("Department not found.");
+            return;
+        }
+
+        string query = "SELECT EmployeeName FROM Employees WHERE DepartmentID = @deptID";
+        using (SqlConnection conn = new SqlConnection(connStr))
+        {
+            conn.Open();
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@deptID", deptID);
+                using (SqlDataReader reader = cmd.ExecuteReader())
+                {
+                    Console.WriteLine($"\n========== Employees in {deptName} ==========");
+                    while (reader.Read())
+                    {
+                        Console.WriteLine(reader["EmployeeName"]);
+                    }
+                }
+            }
+        }
+    }
+
+    static int? GetDepartmentIdByName(string deptName)
+    {
+        string query = "SELECT DepartmentID FROM Departments WHERE DepartmentName = @deptName";
+        using (SqlConnection conn = new SqlConnection(connStr))
+        {
+            conn.Open();
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@deptName", deptName);
+                object result = cmd.ExecuteScalar();
+                return result != null ? (int?)result : null;
+            }
+        }
+    }
+
     static void DisplayEmployees()
     {
-        string query = "SELECT EmployeeID, EmployeeName FROM Employees";
+        string query = @"
+        SELECT e.EmployeeID, e.EmployeeName, d.DepartmentName 
+        FROM Employees e
+        LEFT JOIN Departments d ON e.DepartmentID = d.DepartmentID";
+
         using (SqlConnection conn = new SqlConnection(connStr))
         {
             conn.Open();
@@ -121,7 +179,8 @@ class Program
                 Console.WriteLine("\n========== Employees ==========");
                 while (reader.Read())
                 {
-                    Console.WriteLine($"ID: {reader["EmployeeID"]}, Name: {reader["EmployeeName"]}");
+                    string department = reader["DepartmentName"] != DBNull.Value ? reader["DepartmentName"].ToString() : "No Department";
+                    Console.WriteLine($"ID: {reader["EmployeeID"]}, Name: {reader["EmployeeName"]}, Department: {department}");
                 }
             }
         }
@@ -145,72 +204,104 @@ class Program
         }
     }
 
-    static void DisplayDepartmentWithEmployees()
-    {
-        Console.Write("Enter Department ID: ");
-        int deptID = int.Parse(Console.ReadLine());
-        string query = "SELECT EmployeeName FROM Employees WHERE DepartmentID = @deptID";
-        using (SqlConnection conn = new SqlConnection(connStr))
-        {
-            conn.Open();
-            using (SqlCommand cmd = new SqlCommand(query, conn))
-            {
-                cmd.Parameters.AddWithValue("@deptID", deptID);
-                using (SqlDataReader reader = cmd.ExecuteReader())
-                {
-                    Console.WriteLine("\n========== Employees in Department ==========");
-                    while (reader.Read())
-                    {
-                        Console.WriteLine(reader["EmployeeName"]);
-                    }
-                }
-            }
-        }
-    }
 
     static void EditEmployee()
     {
-        Console.Write("Enter Employee ID to edit: ");
-        int id = int.Parse(Console.ReadLine());
+        Console.Write("Enter Employee ID or Name to edit: ");
+        string input = Console.ReadLine();
+
+        int? id = int.TryParse(input, out int parsedId) ? parsedId : GetEmployeeIdByName(input);
+
+        if (id == null)
+        {
+            Console.WriteLine("Employee not found.");
+            return;
+        }
+
         Console.Write("Enter New Name: ");
-        string name = Console.ReadLine();
+        string newName = Console.ReadLine();
 
         string query = "UPDATE Employees SET EmployeeName = @name WHERE EmployeeID = @id";
         ExecuteQuery(query, cmd => {
-            cmd.Parameters.AddWithValue("@name", name);
+            cmd.Parameters.AddWithValue("@name", newName);
             cmd.Parameters.AddWithValue("@id", id);
         });
+
         Console.WriteLine("Employee updated successfully.");
     }
 
     static void EditDepartment()
     {
-        Console.Write("Enter Department ID to edit: ");
-        int id = int.Parse(Console.ReadLine());
+        Console.Write("Enter Department ID or Name to edit: ");
+        string input = Console.ReadLine();
+
+        int? id = int.TryParse(input, out int parsedId) ? parsedId : GetDepartmentIdByName(input);
+
+        if (id == null)
+        {
+            Console.WriteLine("Department not found.");
+            return;
+        }
+
         Console.Write("Enter New Department Name: ");
-        string name = Console.ReadLine();
+        string newName = Console.ReadLine();
 
         string query = "UPDATE Departments SET DepartmentName = @name WHERE DepartmentID = @id";
         ExecuteQuery(query, cmd => {
-            cmd.Parameters.AddWithValue("@name", name);
+            cmd.Parameters.AddWithValue("@name", newName);
             cmd.Parameters.AddWithValue("@id", id);
         });
+
         Console.WriteLine("Department updated successfully.");
     }
 
     static void DeleteEmployee()
     {
-        Console.Write("Enter Employee ID to delete: ");
-        int id = int.Parse(Console.ReadLine());
+        Console.Write("Enter Employee ID or Name to delete: ");
+        string input = Console.ReadLine();
+
+        int? id = int.TryParse(input, out int parsedId) ? parsedId : GetEmployeeIdByName(input);
+
+        if (id == null)
+        {
+            Console.WriteLine("Employee not found.");
+            return;
+        }
+
         ExecuteQuery("DELETE FROM Employees WHERE EmployeeID = @id", cmd => cmd.Parameters.AddWithValue("@id", id));
         Console.WriteLine("Employee deleted.");
     }
 
     static void DeleteDepartment()
     {
-        Console.Write("Enter Department ID to delete: ");
-        int id = int.Parse(Console.ReadLine());
+        Console.Write("Enter Department ID or Name to delete: ");
+        string input = Console.ReadLine();
+
+        int? id = int.TryParse(input, out int parsedId) ? parsedId : GetDepartmentIdByName(input);
+
+        if (id == null)
+        {
+            Console.WriteLine("Department not found.");
+            return;
+        }
+
         ExecuteQuery("DELETE FROM Departments WHERE DepartmentID = @id", cmd => cmd.Parameters.AddWithValue("@id", id));
         Console.WriteLine("Department deleted.");
     }
+
+    static int? GetEmployeeIdByName(string name)
+    {
+        string query = "SELECT EmployeeID FROM Employees WHERE EmployeeName = @name";
+        using (SqlConnection conn = new SqlConnection(connStr))
+        {
+            conn.Open();
+            using (SqlCommand cmd = new SqlCommand(query, conn))
+            {
+                cmd.Parameters.AddWithValue("@name", name);
+                object result = cmd.ExecuteScalar();
+                return result != null ? (int?)result : null;
+            }
+        }
+    }
+
 }
